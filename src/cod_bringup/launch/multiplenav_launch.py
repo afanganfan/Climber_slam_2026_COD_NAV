@@ -5,7 +5,7 @@ from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
-from ament_index_python.packages import get_package_share_directory
+from ament_index_python.packages import PackageNotFoundError, get_package_share_directory
 from launch_ros.substitutions import FindPackageShare
 
 
@@ -28,6 +28,24 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time')
     slam_params_file = LaunchConfiguration('slam_params_file')
     nav2_params_file = LaunchConfiguration('nav2_params_file')
+
+    # RealSense is optional for this stack. If package is missing, skip camera launch.
+    realsense_actions = []
+    try:
+        realsense_dir = get_package_share_directory('realsense2_camera')
+        realsense_actions.append(
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(realsense_dir, 'launch', 'rs_launch.py')
+                ),
+                launch_arguments={
+                    'depth_module.depth_profile': '1280x720x30',
+                    'pointcloud.enable': 'true'
+                }.items()
+            )
+        )
+    except PackageNotFoundError:
+        print('[cod_bringup] realsense2_camera not found, skip RealSense node.')
 
     # 定义节点和包含的launch文件
     load_nodes = GroupAction(
@@ -59,7 +77,10 @@ def generate_launch_description():
                                 "config",
                                 "mid360.yaml",
                             ]
-                        )
+                        ),
+                        {
+                            "base_frame": "chassis"
+                        }
                     ],
             ),
             Node(
@@ -115,10 +136,59 @@ def generate_launch_description():
                 ],
             ),
             Node(
+                package="tf2_ros",
+                executable="static_transform_publisher",
+                arguments=[
+                    "--x",
+                    "0.0",
+                    "--y",
+                    "0.0",
+                    "--z",
+                    "0.406",
+                    "--roll",
+                    "0.0",
+                    "--pitch",
+                    "0.0",
+                    "--yaw",
+                    "0.0",
+                    "--frame-id",
+                    "chassis",
+                    "--child-frame-id",
+                    "base_link",
+                ],
+            ),
+            Node(
+                package="tf2_ros",
+                executable="static_transform_publisher",
+                arguments=[
+                    "--x",
+                    "0.0",
+                    "--y",
+                    "0.17",
+                    "--z",
+                    "0.305",
+                    "--roll",
+                    "0.0",
+                    "--pitch",
+                    "0.7854",
+                    "--yaw",
+                    "1.5708",
+                    "--frame-id",
+                    "base_link",
+                    "--child-frame-id",
+                    "livox_frame",
+                ],
+            ),
+            Node(
                 package="fake_vel_transform",
                 executable="fake_vel_transform_node",
                 output="screen",
-                parameters=[{"use_sim_time": use_sim_time}],
+                parameters=[
+                    {"use_sim_time": use_sim_time},
+                    {"robot_base_frame": "base_link"},
+                    {"fake_robot_base_frame": "base_link_fake"},
+                    {"odom_topic": "Odometry"}
+                ],
             ),
             Node(
                 package="cod_serial_ul26",
@@ -126,15 +196,7 @@ def generate_launch_description():
                 output="screen",
                 parameters=[{"use_sim_time": use_sim_time}],
             ),
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(get_package_share_directory('realsense2_camera'),'launch','rs_launch.py')
-                ),
-                launch_arguments={
-                    'depth_module.depth_profile': '1280x720x30',
-                    'pointcloud.enable': 'true'
-                }.items()
-            ),
+            *realsense_actions,
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(os.path.join(bring_up_dir,'launch','navigation_launch.py')),
                 launch_arguments={

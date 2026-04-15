@@ -5,7 +5,7 @@ from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
-from ament_index_python.packages import get_package_share_directory
+from ament_index_python.packages import PackageNotFoundError, get_package_share_directory
 from launch_ros.substitutions import FindPackageShare
 
 
@@ -29,6 +29,31 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time')
     slam_params_file = LaunchConfiguration('slam_params_file')
     nav2_params_file = LaunchConfiguration('nav2_params_file')
+
+    # RealSense is optional for this stack. If package is missing, skip camera launch.
+    realsense_actions = []
+    try:
+        realsense_dir = get_package_share_directory('realsense2_camera')
+        realsense_actions.append(
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(realsense_dir, 'launch', 'rs_launch.py')
+                ),
+                launch_arguments={
+                    'depth_module.depth_profile': '424x240x90',
+                    'pointcloud.enable': 'true',
+                    'pointcloud.ordered_pc': 'false',
+                    'pointcloud.allow_no_texture_points': 'true',
+                    'spatial_filter.enable': 'true',
+                    'temporal_filter.enable': 'true',
+                    'decimation_filter.enable': 'false',
+                    'publish_tf': 'true',
+                    'depth_module.enable_auto_exposure': 'true',
+                }.items()
+            )
+        )
+    except PackageNotFoundError:
+        print('[cod_bringup] realsense2_camera not found, skip RealSense node.')
 
     # 定义节点和包含的launch文件
     load_nodes = GroupAction(
@@ -99,24 +124,7 @@ def generate_launch_description():
                 output="screen",
                 parameters=[{"use_sim_time": use_sim_time}],
             ),
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(get_package_share_directory('realsense2_camera'), 'launch', 'rs_launch.py')
-                ),
-                launch_arguments={
-                    'depth_module.depth_profile': '424x240x90',    # 最高帧率
-                    #'enable_depth': 'true',
-                    #'enable_color': 'false',                        # 不需要彩色，节省USB带宽
-                    'pointcloud.enable': 'true',
-                    'pointcloud.ordered_pc': 'false',               # 无序点云，减少处理开销
-                    'pointcloud.allow_no_texture_points': 'true',   # 无彩色时必须开启
-                    'spatial_filter.enable': 'true',                # 空间滤波降噪
-                    'temporal_filter.enable': 'true',               # 时间滤波稳定深度
-                    'decimation_filter.enable': 'false',            # 不再降分辨率，已经很低
-                    'publish_tf': 'true',                           # 发布内部TF链
-                    'depth_module.enable_auto_exposure': 'true',
-                }.items()
-            ),
+            *realsense_actions,
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(os.path.join(bring_up_dir,'launch','navigation_launch.py')),
                 launch_arguments={

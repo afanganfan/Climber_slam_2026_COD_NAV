@@ -21,6 +21,7 @@ namespace small_point_lio {
         std::string imu_topic = declare_parameter<std::string>("imu_topic");
         std::string lidar_type = declare_parameter<std::string>("lidar_type");
         std::string lidar_frame = declare_parameter<std::string>("lidar_frame");
+        std::string base_frame = declare_parameter<std::string>("base_frame", "base_link");
         bool save_pcd = declare_parameter<bool>("save_pcd");
         small_point_lio = std::make_unique<small_point_lio::SmallPointLio>(*this);
         odometry_publisher = create_publisher<nav_msgs::msg::Odometry>("/Odometry", 1000);
@@ -49,7 +50,7 @@ namespace small_point_lio {
                         RCLCPP_INFO(rclcpp::get_logger("small_point_lio"), "save pcd success");
                     }).detach();
                 });
-        small_point_lio->set_odometry_callback([this, lidar_frame](const common::Odometry &odometry) {
+        small_point_lio->set_odometry_callback([this, lidar_frame, base_frame](const common::Odometry &odometry) {
             last_odometry = odometry;
 
             builtin_interfaces::msg::Time time_msg;
@@ -59,26 +60,26 @@ namespace small_point_lio {
             geometry_msgs::msg::TransformStamped transform_stamped;
             transform_stamped.header.stamp = time_msg;
             transform_stamped.header.frame_id = "odom";
-            transform_stamped.child_frame_id = "base_link";
-            geometry_msgs::msg::TransformStamped base_link_to_lidar_frame_transform;
+            transform_stamped.child_frame_id = base_frame;
+            geometry_msgs::msg::TransformStamped base_frame_to_lidar_frame_transform;
             try {
-                base_link_to_lidar_frame_transform = tf_buffer->lookupTransform(lidar_frame, "base_link", time_msg);
+                base_frame_to_lidar_frame_transform = tf_buffer->lookupTransform(lidar_frame, base_frame, time_msg);
             } catch (tf2::TransformException &ex) {
-                RCLCPP_ERROR(rclcpp::get_logger("small_point_lio"), "Failed to lookup transform from base_link to %s: %s", lidar_frame.c_str(), ex.what());
+                RCLCPP_ERROR(rclcpp::get_logger("small_point_lio"), "Failed to lookup transform from %s to %s: %s", base_frame.c_str(), lidar_frame.c_str(), ex.what());
                 return;
             }
             tf2::Transform tf_lidar_odom_to_lidar_frame;
             tf_lidar_odom_to_lidar_frame.setOrigin(tf2::Vector3(odometry.position.x(), odometry.position.y(), odometry.position.z()));
             tf_lidar_odom_to_lidar_frame.setRotation(tf2::Quaternion(odometry.orientation.x(), odometry.orientation.y(), odometry.orientation.z(), odometry.orientation.w()));
-            tf2::Transform tf_base_link_to_lidar_frame;
-            tf2::fromMsg(base_link_to_lidar_frame_transform.transform, tf_base_link_to_lidar_frame);
-            tf2::Transform tf_odom_to_base_link = tf_base_link_to_lidar_frame.inverse() * tf_lidar_odom_to_lidar_frame * tf_base_link_to_lidar_frame;
-            transform_stamped.transform = tf2::toMsg(tf_odom_to_base_link);
+            tf2::Transform tf_base_frame_to_lidar_frame;
+            tf2::fromMsg(base_frame_to_lidar_frame_transform.transform, tf_base_frame_to_lidar_frame);
+            tf2::Transform tf_odom_to_base_frame = tf_base_frame_to_lidar_frame.inverse() * tf_lidar_odom_to_lidar_frame * tf_base_frame_to_lidar_frame;
+            transform_stamped.transform = tf2::toMsg(tf_odom_to_base_frame);
 
             nav_msgs::msg::Odometry odometry_msg;
             odometry_msg.header.stamp = time_msg;
             odometry_msg.header.frame_id = "odom";
-            odometry_msg.child_frame_id = "base_link";
+            odometry_msg.child_frame_id = base_frame;
             odometry_msg.pose.pose.position.x = transform_stamped.transform.translation.x;
             odometry_msg.pose.pose.position.y = transform_stamped.transform.translation.y;
             odometry_msg.pose.pose.position.z = transform_stamped.transform.translation.z;
