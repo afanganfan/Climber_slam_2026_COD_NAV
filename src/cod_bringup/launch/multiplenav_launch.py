@@ -29,23 +29,23 @@ def generate_launch_description():
     slam_params_file = LaunchConfiguration('slam_params_file')
     nav2_params_file = LaunchConfiguration('nav2_params_file')
 
-    # RealSense is optional for this stack. If package is missing, skip camera launch.
+    # 深度相机启动节点已注释（禁用）
     realsense_actions = []
-    try:
-        realsense_dir = get_package_share_directory('realsense2_camera')
-        realsense_actions.append(
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(realsense_dir, 'launch', 'rs_launch.py')
-                ),
-                launch_arguments={
-                    'depth_module.depth_profile': '1280x720x30',
-                    'pointcloud.enable': 'true'
-                }.items()
-            )
-        )
-    except PackageNotFoundError:
-        print('[cod_bringup] realsense2_camera not found, skip RealSense node.')
+    # try:
+    #     realsense_dir = get_package_share_directory('realsense2_camera')
+    #     realsense_actions.append(
+    #         IncludeLaunchDescription(
+    #             PythonLaunchDescriptionSource(
+    #                 os.path.join(realsense_dir, 'launch', 'rs_launch.py')
+    #             ),
+    #             launch_arguments={
+    #                 'depth_module.depth_profile': '1280x720x30',
+    #                 'pointcloud.enable': 'true'
+    #             }.items()
+    #         )
+    #     )
+    # except PackageNotFoundError:
+    #     print('[cod_bringup] realsense2_camera not found, skip RealSense node.')
 
     # 定义节点和包含的launch文件
     load_nodes = GroupAction(
@@ -196,7 +196,7 @@ def generate_launch_description():
                 output="screen",
                 parameters=[{"use_sim_time": use_sim_time}],
             ),
-            *realsense_actions,
+            # *realsense_actions,
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(os.path.join(bring_up_dir,'launch','navigation_launch.py')),
                 launch_arguments={
