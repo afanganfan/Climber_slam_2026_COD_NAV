@@ -54,12 +54,12 @@ void FakeVelTransform::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg
 // Transform the velocity from `robot_base_frame` to `fake_robot_base_frame`
 void FakeVelTransform::cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
-  float angle_diff = current_robot_base_angle_;
-
   geometry_msgs::msg::Twist aft_tf_vel;
-  aft_tf_vel.angular.z = spin_speed_;
-  aft_tf_vel.linear.x = msg->linear.x * cos(angle_diff) + msg->linear.y * sin(angle_diff);
-  aft_tf_vel.linear.y = -msg->linear.x * sin(angle_diff) + msg->linear.y * cos(angle_diff);
+  // Keep command velocity in the controller frame to avoid reversing
+  // direction when odometry yaw changes.
+  aft_tf_vel.angular.z = msg->angular.z + spin_speed_;
+  aft_tf_vel.linear.x = msg->linear.x;
+  aft_tf_vel.linear.y = msg->linear.y;
 
   cmd_vel_chassis_pub_->publish(aft_tf_vel);
 }

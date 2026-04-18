@@ -180,21 +180,13 @@ def generate_launch_description():
                 ],
             ),
             Node(
-                package="fake_vel_transform",
-                executable="fake_vel_transform_node",
-                output="screen",
-                parameters=[
-                    {"use_sim_time": use_sim_time},
-                    {"robot_base_frame": "base_link"},
-                    {"fake_robot_base_frame": "base_link_fake"},
-                    {"odom_topic": "Odometry"}
-                ],
-            ),
-            Node(
                 package="cod_serial_ul26",
                 executable="cod_serial",
                 output="screen",
-                parameters=[{"use_sim_time": use_sim_time}],
+                parameters=[
+                    {"use_sim_time": use_sim_time},
+                    {"topic_name": "cmd_vel"}
+                ],
             ),
             # *realsense_actions,
             IncludeLaunchDescription(

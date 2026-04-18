@@ -2,7 +2,7 @@ bt_navigator:
   ros__parameters:
     use_sim_time: false  # 是否使用仿真时钟
     global_frame: map  # 全局参考坐标系
-    robot_base_frame: base_link_fake  # 机器人基座坐标系
+    robot_base_frame: base_link  # 机器人基座坐标系
     odom_topic: Odometry  # 里程计话题名
     bt_loop_duration: 10  # 行为树循环周期(ms)
     timeout: 100  # 超时时间
@@ -175,7 +175,7 @@ local_costmap:
       update_frequency: 20.0  # 更新频率(Hz)
       publish_frequency: 20.0  # 发布频率(Hz)
       global_frame: odom  # 全局参考坐标系
-      robot_base_frame: base_link_fake  # 机器人基座坐标系
+      robot_base_frame: base_link  # 机器人基座坐标系
       use_sim_time: False  # 是否使用仿真时钟
       rolling_window: true  # 是否使用滚动窗口
       width: 10  # 地图宽度(m)
@@ -220,7 +220,7 @@ local_costmap:
           obstacle_range: 8.0  # 障碍物探测范围(m)
           raytrace_range: 9.0  # 射线清除范围(m)
 
-          min_obstacle_height: 0.1     #default 0, meters
+          min_obstacle_height: 0.8     #default 0, meters
           max_obstacle_height: 1.0     #defaule 3, meters
           expected_update_rate: 0.0    #default 0, if not updating at this rate at least, remove from buffer
           observation_persistence: 0.0 #default 0, use all measurements taken during now-value, 0=latest
@@ -265,7 +265,7 @@ global_costmap:
       update_frequency: 20.0  # 更新频率(Hz)
       publish_frequency: 20.0  # 发布频率(Hz)
       global_frame: map  # 全局参考坐标系
-      robot_base_frame: base_link_fake  # 机器人基座坐标系
+      robot_base_frame: base_link  # 机器人基座坐标系
       rolling_window: true  # 是否使用滚动窗口
       use_sim_time: False  # 是否使用仿真时钟
       robot_radius: 0.2  # 机器人半径(m)
@@ -402,7 +402,7 @@ smoother_server:
   ros__parameters:
     costmap_topic: global_costmap/costmap_raw  # 参数：costmap topic
     footprint_topic: global_costmap/published_footprint  # 参数：footprint topic
-    robot_base_frame: base_link_fake  # 机器人基座坐标系
+    robot_base_frame: base_link  # 机器人基座坐标系
     transform_tolerance: 0.1  # TF变换容忍时间(s)
     smoother_plugins: ["savitzky_golay_smoother"]  # 平滑器插件列表
     savitzky_golay_smoother:
@@ -434,7 +434,7 @@ behavior_server:
         plugin: "nav2_behaviors/AssistedTeleop"  # 插件类型/类名
     local_frame: odom  # 局部参考坐标系
     global_frame: map  # 全局参考坐标系
-    robot_base_frame: base_link_fake  # 机器人基座坐标系
+    robot_base_frame: base_link  # 机器人基座坐标系
     transform_tolerance: 0.1  # TF变换容忍时间(s)
     simulate_ahead_time: 2.0  # 前向仿真时长(s)
     max_rotational_vel: 1.0  # 最大旋转速度(rad/s)

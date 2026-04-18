@@ -35,7 +35,7 @@ private:
     uint8_t header = 0xA5;
     float vx = msg->linear.x;
     float vy = msg->linear.y;
-    float vz = msg->linear.z;
+    float vz = msg->angular.z;
 
     // Convert the packet to a byte array
     uint8_t packet[15];
