@@ -481,3 +481,44 @@ velocity_smoother:
     max_decel: [-3.5, -3.5, -3.0] #与 MPPI 制动一致
     odom_topic: "Odometry"
     odom_duration: 0.1
+
+amcl:
+  ros__parameters:
+    use_sim_time: false  # 是否使用仿真时钟
+    alpha1: 0.2  # 里程计旋转噪声(由旋转引起的旋转误差)
+    alpha2: 0.2  # 里程计旋转噪声(由平移引起的旋转误差)
+    alpha3: 0.2  # 里程计平移噪声(由平移引起的平移误差)
+    alpha4: 0.2  # 里程计平移噪声(由旋转引起的平移误差)
+    alpha5: 0.2  # 全向底盘额外平移噪声(Omni模型常用)
+    base_frame_id: "base_link_fake"  # 机器人基座坐标系
+    beam_skip_distance: 0.5  # 光束跳过判定距离阈值(米)
+    beam_skip_error_threshold: 0.9  # 跳过光束的错误比例阈值
+    beam_skip_threshold: 0.3  # 启用跳过前所需一致性阈值
+    do_beamskip: true  # 是否启用异常光束跳过(动态障碍多时更稳)
+    global_frame_id: "map"  # 全局地图坐标系
+    lambda_short: 0.1  # z_short 指数分布参数(处理意外近距离回波)
+    laser_likelihood_max_dist: 2.0  # likelihood_field 模型的最大有效匹配距离(米)
+    laser_max_range: 100.0  # 激光最大测距(小于0表示自动取传感器值)
+    laser_min_range: -1.0  # 激光最小测距(小于0表示自动取传感器值)
+    laser_model_type: "likelihood_field"  # 激光模型类型(常用且鲁棒)
+    max_beams: 120  # 每次更新最多使用的激光束数(越大越准但更耗CPU)
+    max_particles: 3000  # 粒子数上限(复杂场景可提高)
+    min_particles: 800  # 粒子数下限(影响基础稳定性)
+    odom_frame_id: "odom"  # 里程计坐标系
+    pf_err: 0.05  # 粒子滤波器允许误差(越小越保守)
+    pf_z: 0.99  # 粒子滤波器置信度
+    recovery_alpha_fast: 0.1  # 快速权重恢复系数(重定位响应更快)
+    recovery_alpha_slow: 0.001  # 慢速权重恢复系数(稳定长期分布)
+    resample_interval: 1  # 每多少次滤波更新执行一次重采样
+    robot_model_type: "nav2_amcl::OmniMotionModel"  # 运动模型: 全向底盘
+    save_pose_rate: 0.5  # 保存位姿到参数服务器的频率(Hz)
+    sigma_hit: 0.2  # z_hit 高斯噪声标准差(越小越依赖精确匹配)
+    tf_broadcast: true  # 是否发布 map->odom TF
+    transform_tolerance: 1.0  # TF 时间容忍度(秒)
+    update_min_a: 0.02  # 触发更新的最小角度变化(弧度)
+    update_min_d: 0.05  # 触发更新的最小位移(米)
+    z_hit: 0.5  # 命中模型权重(测量与地图匹配)
+    z_max: 0.05  # 最大量程模型权重(打到最远距离)
+    z_rand: 0.5  # 随机测量模型权重(杂散噪声)
+    z_short: 0.05  # 短测量模型权重(遮挡导致提前返回)
+    scan_topic: /scan  # 输入激光话题
