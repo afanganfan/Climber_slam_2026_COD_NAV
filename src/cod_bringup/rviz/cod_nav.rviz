@@ -143,7 +143,7 @@ Visualization Manager:
           Value: false
         - Alpha: 1
           Class: rviz_default_plugins/PointStamped
-          Color: 204; 41; 204
+          Color: 204; 51; 204
           Enabled: true
           History Length: 1
           Name: PointStamped
@@ -159,7 +159,7 @@ Visualization Manager:
         - Alpha: 1
           Buffer Length: 1
           Class: rviz_default_plugins/Path
-          Color: 230; 97; 0
+          Color: 25; 255; 0
           Enabled: true
           Head Diameter: 0.30000001192092896
           Head Length: 0.20000000298023224
@@ -183,6 +183,18 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /local_plan
+          Value: true
+        - Class: rviz_default_plugins/Marker
+          Enabled: true
+          Name: CmdVelDirection
+          Namespaces:
+            cmd_vel_direction: true
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /aft_cmd_vel_direction
           Value: true
         - Alpha: 1
           Autocompute Intensity Bounds: true
@@ -218,12 +230,12 @@ Visualization Manager:
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
-        - Alpha: 0.5
+        - Alpha: 0.7
           Class: rviz_default_plugins/Map
           Color Scheme: costmap
           Draw Behind: false
           Enabled: true
-          Name: Map
+          Name: LocalCostmap(Lidar)
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -239,12 +251,12 @@ Visualization Manager:
             Value: /local_costmap/costmap_updates
           Use Timestamp: false
           Value: true
-        - Alpha: 0.699999988079071
+        - Alpha: 0.7
           Class: rviz_default_plugins/Map
           Color Scheme: costmap
           Draw Behind: false
           Enabled: true
-          Name: Map
+          Name: GlobalCostmap
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -263,7 +275,7 @@ Visualization Manager:
         - Alpha: 1
           Buffer Length: 1
           Class: rviz_default_plugins/Path
-          Color: 51; 209; 122
+          Color: 25; 255; 0
           Enabled: true
           Head Diameter: 0.30000001192092896
           Head Length: 0.20000000298023224
@@ -326,7 +338,7 @@ Visualization Manager:
       Name: viz
   Enabled: true
   Global Options:
-    Background Color: 48; 48; 48
+    Background Color: 255; 255; 255
     Fixed Frame: map
     Frame Rate: 30
   Name: root

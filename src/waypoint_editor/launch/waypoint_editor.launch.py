@@ -10,7 +10,7 @@ def generate_launch_description():
     rviz_config = os.path.join(pkg, 'rviz', 'rviz_waypoint_editor.rviz')
 
     declare_map_yaml = DeclareLaunchArgument(
-        'map_yaml', default_value=os.path.join(pkg, 'data', 'sample_map.yaml'),
+        'map_yaml', default_value='/home/nucshao/Climber_slam_2026_COD_NAV/src/cod_bringup/maps/2025new1.yaml',
         description='Full path to map yaml file')
     map_yaml_file = LaunchConfiguration('map_yaml')
 

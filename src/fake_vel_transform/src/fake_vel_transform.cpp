@@ -1,5 +1,8 @@
 #include "fake_vel_transform/fake_vel_transform.hpp"
 
+#include <algorithm>
+#include <cmath>
+
 #include <tf2/utils.h>
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
@@ -16,6 +19,10 @@ FakeVelTransform::FakeVelTransform(const rclcpp::NodeOptions & options)
   this->declare_parameter<std::string>("odom_topic", "Odometry");
   this->declare_parameter<std::string>("input_cmd_vel_topic", "cmd_vel");
   this->declare_parameter<std::string>("output_cmd_vel_topic", "aft_cmd_vel");
+  this->declare_parameter<bool>("publish_velocity_marker", true);
+  this->declare_parameter<std::string>("velocity_marker_topic", "aft_cmd_vel_direction");
+  this->declare_parameter<float>("velocity_marker_scale", 1.2F);
+  this->declare_parameter<float>("velocity_marker_max_speed", 1.5F);
   this->declare_parameter<float>("spin_speed", 0.0);
 
   this->get_parameter("robot_base_frame", robot_base_frame_);
@@ -23,12 +30,23 @@ FakeVelTransform::FakeVelTransform(const rclcpp::NodeOptions & options)
   this->get_parameter("fake_robot_base_frame", fake_robot_base_frame_);
   this->get_parameter("input_cmd_vel_topic", input_cmd_vel_topic_);
   this->get_parameter("output_cmd_vel_topic", output_cmd_vel_topic_);
+  this->get_parameter("publish_velocity_marker", publish_velocity_marker_);
+  this->get_parameter("velocity_marker_topic", velocity_marker_topic_);
+  this->get_parameter("velocity_marker_scale", velocity_marker_scale_);
+  this->get_parameter("velocity_marker_max_speed", velocity_marker_max_speed_);
   this->get_parameter("spin_speed", spin_speed_);
 
   tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
   cmd_vel_chassis_pub_ =
     this->create_publisher<geometry_msgs::msg::Twist>(output_cmd_vel_topic_, 1);
+
+  if (publish_velocity_marker_) {
+    velocity_marker_pub_ =
+      this->create_publisher<visualization_msgs::msg::Marker>(velocity_marker_topic_, 10);
+    RCLCPP_INFO(
+      get_logger(), "Publish velocity direction marker on: %s", velocity_marker_topic_.c_str());
+  }
 
   cmd_vel_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
     input_cmd_vel_topic_, 1,
@@ -62,6 +80,59 @@ void FakeVelTransform::cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr
   aft_tf_vel.linear.y = msg->linear.y;
 
   cmd_vel_chassis_pub_->publish(aft_tf_vel);
+  publishVelocityMarker(aft_tf_vel);
+}
+
+void FakeVelTransform::publishVelocityMarker(const geometry_msgs::msg::Twist & cmd)
+{
+  if (!publish_velocity_marker_ || !velocity_marker_pub_) {
+    return;
+  }
+
+  visualization_msgs::msg::Marker marker;
+  marker.header.stamp = this->now();
+  marker.header.frame_id = robot_base_frame_;
+  marker.ns = "cmd_vel_direction";
+  marker.id = 0;
+  marker.type = visualization_msgs::msg::Marker::ARROW;
+  marker.action = visualization_msgs::msg::Marker::ADD;
+  marker.scale.x = 0.04;
+  marker.scale.y = 0.08;
+  marker.scale.z = 0.12;
+  marker.color.a = 0.95;
+  marker.color.r = 0.1;
+  marker.color.g = 0.9;
+  marker.color.b = 0.3;
+  marker.lifetime = rclcpp::Duration::from_seconds(0.2);
+
+  const double vx = static_cast<double>(cmd.linear.x);
+  const double vy = static_cast<double>(cmd.linear.y);
+  const double speed = std::hypot(vx, vy);
+
+  if (speed < 1e-4) {
+    marker.action = visualization_msgs::msg::Marker::DELETE;
+    velocity_marker_pub_->publish(marker);
+    return;
+  }
+
+  const double capped_speed =
+    std::min(speed, static_cast<double>(velocity_marker_max_speed_));
+  const double arrow_length =
+    std::max(0.08, capped_speed * static_cast<double>(velocity_marker_scale_));
+
+  geometry_msgs::msg::Point p0;
+  p0.x = 0.0;
+  p0.y = 0.0;
+  p0.z = 0.0;
+
+  geometry_msgs::msg::Point p1;
+  p1.x = arrow_length * (vx / speed);
+  p1.y = arrow_length * (vy / speed);
+  p1.z = 0.0;
+
+  marker.points.push_back(p0);
+  marker.points.push_back(p1);
+  velocity_marker_pub_->publish(marker);
 }
 
 }  // namespace fake_vel_transform

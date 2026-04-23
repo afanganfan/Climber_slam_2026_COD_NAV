@@ -59,7 +59,7 @@ def generate_launch_description():
 
     configured_params = ParameterFile(
         RewrittenYaml(
-            source_file=par/ams_file,
+            source_file=params_file,
             root_key=namespace,
             param_rewrites=param_substitutions,
             convert_types=True),
@@ -75,7 +75,7 @@ def generate_launch_description():
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
-        default_value=os.path.join(bringup_dir,'maps','guli.yaml'),
+        default_value=os.path.join(bringup_dir,'maps','2025new1.yaml'),
         description='Full path to map yaml file to load')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
