@@ -6,6 +6,7 @@
 #include <cmath>
 #include <memory>
 #include <string>
+#include <algorithm>
 
 #include "nav2_core/controller.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
@@ -56,6 +57,15 @@ public:
     node->get_parameter(name + ".direct_approach_distance", direct_approach_distance_);
     node->get_parameter(name + ".direct_approach_kp", direct_approach_kp_);
 
+    if (direct_approach_distance_ > approach_distance_) {
+      RCLCPP_WARN(
+        logger_,
+        "GoalApproachController: direct_approach_distance(%.2f) > approach_distance(%.2f), "
+        "clamping to approach_distance.",
+        direct_approach_distance_, approach_distance_);
+      direct_approach_distance_ = approach_distance_;
+    }
+
     // 通过pluginlib加载内部控制器
     loader_ = std::make_unique<pluginlib::ClassLoader<nav2_core::Controller>>(
       "nav2_core", "nav2_core::Controller");
@@ -100,17 +110,34 @@ public:
   {
     auto cmd = inner_controller_->computeVelocityCommands(pose, velocity, goal_checker);
 
+    if (goal_.header.frame_id.empty()) {
+      return cmd;
+    }
+
     // 计算到目标的距离
     double dx = goal_.pose.position.x - pose.pose.position.x;
     double dy = goal_.pose.position.y - pose.pose.position.y;
     double dist = std::hypot(dx, dy);
 
     if (dist < direct_approach_distance_) {
-      // 近距离直接驱动模式：绕过 MPPI 的弧线输出，直接朝目标点走
-      double target_speed = std::min(approach_velocity_, dist * direct_approach_kp_);
-      if (dist > 0.01) {
-        cmd.twist.linear.x = target_speed * (dx / dist);
-        cmd.twist.linear.y = target_speed * (dy / dist);
+      // 近距离直接驱动模式：将目标向量从地图系转换到机体系再下发速度
+      // 避免直接使用地图系 dx/dy 导致沿错误方向冲点。
+      const auto & q = pose.pose.orientation;
+      const double siny_cosp = 2.0 * (q.w * q.z + q.x * q.y);
+      const double cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z);
+      const double yaw = std::atan2(siny_cosp, cosy_cosp);
+
+      const double cos_yaw = std::cos(yaw);
+      const double sin_yaw = std::sin(yaw);
+
+      const double dx_body = cos_yaw * dx + sin_yaw * dy;
+      const double dy_body = -sin_yaw * dx + cos_yaw * dy;
+      const double body_dist = std::hypot(dx_body, dy_body);
+
+      const double target_speed = std::clamp(dist * direct_approach_kp_, 0.0, approach_velocity_);
+      if (body_dist > 1e-3) {
+        cmd.twist.linear.x = target_speed * (dx_body / body_dist);
+        cmd.twist.linear.y = target_speed * (dy_body / body_dist);
       } else {
         cmd.twist.linear.x = 0.0;
         cmd.twist.linear.y = 0.0;
