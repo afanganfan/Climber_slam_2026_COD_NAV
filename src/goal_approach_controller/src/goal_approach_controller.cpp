@@ -8,6 +8,8 @@
 #include <string>
 #include <algorithm>
 
+#include "tf2/exceptions.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_core/controller.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_util/node_utils.hpp"
@@ -49,6 +51,12 @@ public:
     nav2_util::declare_parameter_if_not_declared(
       node, name + ".direct_approach_kp",
       rclcpp::ParameterValue(1.0));
+    nav2_util::declare_parameter_if_not_declared(
+      node, name + ".direct_approach_exit_distance",
+      rclcpp::ParameterValue(0.55));
+    nav2_util::declare_parameter_if_not_declared(
+      node, name + ".max_approach_angular_velocity",
+      rclcpp::ParameterValue(0.35));
 
     std::string inner_plugin_type;
     node->get_parameter(name + ".inner_plugin", inner_plugin_type);
@@ -56,6 +64,10 @@ public:
     node->get_parameter(name + ".approach_velocity", approach_velocity_);
     node->get_parameter(name + ".direct_approach_distance", direct_approach_distance_);
     node->get_parameter(name + ".direct_approach_kp", direct_approach_kp_);
+    node->get_parameter(name + ".direct_approach_exit_distance", direct_approach_exit_distance_);
+    node->get_parameter(name + ".max_approach_angular_velocity", max_approach_angular_velocity_);
+
+    tf_ = tf;
 
     if (direct_approach_distance_ > approach_distance_) {
       RCLCPP_WARN(
@@ -64,6 +76,15 @@ public:
         "clamping to approach_distance.",
         direct_approach_distance_, approach_distance_);
       direct_approach_distance_ = approach_distance_;
+    }
+
+    if (direct_approach_exit_distance_ < direct_approach_distance_) {
+      RCLCPP_WARN(
+        logger_,
+        "GoalApproachController: direct_approach_exit_distance(%.2f) < direct_approach_distance(%.2f), "
+        "clamping to direct_approach_distance + 0.1.",
+        direct_approach_exit_distance_, direct_approach_distance_);
+      direct_approach_exit_distance_ = direct_approach_distance_ + 0.1;
     }
 
     // 通过pluginlib加载内部控制器
@@ -75,9 +96,11 @@ public:
     RCLCPP_INFO(
       logger_,
       "GoalApproachController: 包装 [%s], approach_distance=%.2f m, approach_velocity=%.2f m/s, "
-      "direct_approach_distance=%.2f m, direct_approach_kp=%.2f",
+      "direct_approach_distance=%.2f m, direct_approach_exit_distance=%.2f m, "
+      "direct_approach_kp=%.2f, max_approach_angular_velocity=%.2f rad/s",
       inner_plugin_type.c_str(), approach_distance_, approach_velocity_,
-      direct_approach_distance_, direct_approach_kp_);
+      direct_approach_distance_, direct_approach_exit_distance_,
+      direct_approach_kp_, max_approach_angular_velocity_);
   }
 
   void cleanup() override
@@ -100,6 +123,7 @@ public:
     if (!path.poses.empty()) {
       goal_ = path.poses.back();
     }
+    in_direct_mode_ = false;
     inner_controller_->setPlan(path);
   }
 
@@ -114,12 +138,31 @@ public:
       return cmd;
     }
 
+    geometry_msgs::msg::PoseStamped goal_in_pose_frame = goal_;
+    if (goal_.header.frame_id != pose.header.frame_id) {
+      try {
+        tf_->transform(goal_, goal_in_pose_frame, pose.header.frame_id);
+      } catch (const tf2::TransformException & ex) {
+        RCLCPP_WARN(
+          logger_,
+          "GoalApproachController: failed to transform goal from %s to %s: %s",
+          goal_.header.frame_id.c_str(), pose.header.frame_id.c_str(), ex.what());
+        return cmd;
+      }
+    }
+
     // 计算到目标的距离
-    double dx = goal_.pose.position.x - pose.pose.position.x;
-    double dy = goal_.pose.position.y - pose.pose.position.y;
+    double dx = goal_in_pose_frame.pose.position.x - pose.pose.position.x;
+    double dy = goal_in_pose_frame.pose.position.y - pose.pose.position.y;
     double dist = std::hypot(dx, dy);
 
-    if (dist < direct_approach_distance_) {
+    if (!in_direct_mode_ && dist < direct_approach_distance_) {
+      in_direct_mode_ = true;
+    } else if (in_direct_mode_ && dist > direct_approach_exit_distance_) {
+      in_direct_mode_ = false;
+    }
+
+    if (in_direct_mode_) {
       // 近距离直接驱动模式：将目标向量从地图系转换到机体系再下发速度
       // 避免直接使用地图系 dx/dy 导致沿错误方向冲点。
       const auto & q = pose.pose.orientation;
@@ -152,6 +195,11 @@ public:
         // 角速度也按比例降低，避免原地打转
         cmd.twist.angular.z *= scale;
       }
+
+      cmd.twist.angular.z = std::clamp(
+        cmd.twist.angular.z,
+        -max_approach_angular_velocity_,
+        max_approach_angular_velocity_);
     }
 
     return cmd;
@@ -165,12 +213,16 @@ public:
 private:
   pluginlib::UniquePtr<nav2_core::Controller> inner_controller_;
   std::unique_ptr<pluginlib::ClassLoader<nav2_core::Controller>> loader_;
+  std::shared_ptr<tf2_ros::Buffer> tf_;
   rclcpp::Logger logger_{rclcpp::get_logger("goal_approach_controller")};
   geometry_msgs::msg::PoseStamped goal_;
   double approach_distance_{1.5};
   double approach_velocity_{0.5};
   double direct_approach_distance_{0.5};
+  double direct_approach_exit_distance_{0.55};
   double direct_approach_kp_{1.0};
+  double max_approach_angular_velocity_{0.35};
+  bool in_direct_mode_{false};
 };
 
 }  // namespace goal_approach_controller
