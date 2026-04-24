@@ -5,11 +5,16 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(rm_interfaces REQUIRED)
+find_package(serial REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -25,10 +30,27 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
+
+set(dependencies
+  rclcpp
+  std_msgs
+  geometry_msgs
+  rm_interfaces
+  serial
+)
+
 add_executable(cod_serial src/cod_serial.cpp)
+ament_target_dependencies(cod_serial
+  rclcpp
+  geometry_msgs
+)
+
+add_executable(talker src/talker.cpp)
+ament_target_dependencies(talker ${dependencies})
+
 install(TARGETS
   cod_serial
+  talker
   DESTINATION lib/${PROJECT_NAME})
-ament_target_dependencies(cod_serial rclcpp std_msgs geometry_msgs)
 
 ament_package()
