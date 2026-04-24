@@ -86,7 +86,7 @@ def generate_launch_description():
                                 "mid360.yaml",
                             ]
                         ),
-                        {"base_frame": "chassis"},
+                        {"base_frame": "base_link"},
                     ],
             ),
 
@@ -95,7 +95,7 @@ def generate_launch_description():
                 remappings=[('cloud_in',  '/livox/lidar'),
                             ('scan', '/scan')],
                 parameters=[{
-                    'target_frame': 'chassis',
+                    'target_frame': 'base_link',
                     'transform_tolerance': 0.5,
                     'min_height': 0.1,
                     'max_height': 1.00,
@@ -109,28 +109,6 @@ def generate_launch_description():
                     'inf_epsilon': 1.0
                 }],
                 name='pointcloud_to_laserscan'
-            ),
-            Node(
-                package="tf2_ros",
-                executable="static_transform_publisher",
-                arguments=[
-                    "--x",
-                    "0.0",
-                    "--y",
-                    "0.0",
-                    "--z",
-                    "0.406",
-                    "--roll",
-                    "0.0",
-                    "--pitch",
-                    "0.0",
-                    "--yaw",
-                    "0.0",
-                    "--frame-id",
-                    "chassis",
-                    "--child-frame-id",
-                    "base_link",
-                ],
             ),
             Node(
                 package="tf2_ros",
