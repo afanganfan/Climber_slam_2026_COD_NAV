@@ -2,7 +2,7 @@ bt_navigator:  # 行为树导航节点配置
   ros__parameters:  # ROS 参数集合
     use_sim_time: false  # 是否使用仿真时间
     global_frame: map  # 全局坐标系名称
-    robot_base_frame: chassis  # 机器人基座坐标系
+    robot_base_frame: base_link  # 机器人基座坐标系
     odom_topic: Odometry  # 里程计话题名
     bt_loop_duration: 10  # 持续时间（秒）
     timeout: 100  # 超时时间
@@ -182,7 +182,7 @@ local_costmap:  # 局部代价地图配置
       update_frequency: 20.0  # 运行频率（Hz）
       publish_frequency: 20.0  # 运行频率（Hz）
       global_frame: odom  # 全局坐标系名称
-      robot_base_frame: chassis  # 机器人基座坐标系
+      robot_base_frame: base_link  # 机器人基座坐标系
       use_sim_time: False  # 是否使用仿真时间
       rolling_window: true  # 是否使用滚动窗口地图
       width: 10  # 地图宽度（米）
@@ -272,7 +272,7 @@ global_costmap:  # 全局代价地图配置
       update_frequency: 20.0  # 运行频率（Hz）
       publish_frequency: 20.0  # 运行频率（Hz）
       global_frame: map  # 全局坐标系名称
-      robot_base_frame: chassis  # 机器人基座坐标系
+      robot_base_frame: base_link  # 机器人基座坐标系
       rolling_window: true  # 是否使用滚动窗口地图
       use_sim_time: False  # 是否使用仿真时间
       robot_radius: 0.1  # 半径参数（米）
@@ -409,7 +409,7 @@ smoother_server:  # 路径平滑服务配置
   ros__parameters:  # ROS 参数集合
     costmap_topic: global_costmap/costmap_raw  # 相关话题名
     footprint_topic: global_costmap/published_footprint  # 相关话题名
-    robot_base_frame: chassis  # 机器人基座坐标系
+    robot_base_frame: base_link  # 机器人基座坐标系
     transform_tolerance: 0.1  # 容差阈值
     smoother_plugins: ["savitzky_golay_smoother"]  # 平滑器插件列表
     savitzky_golay_smoother:  # Savitzky-Golay 平滑器配置
@@ -441,7 +441,7 @@ behavior_server:  # 恢复与行为服务配置
         plugin: "nav2_behaviors/AssistedTeleop"  # 使用的插件类名
     local_frame: odom  # 局部坐标系名称
     global_frame: map  # 全局坐标系名称
-    robot_base_frame: chassis  # 机器人基座坐标系
+    robot_base_frame: base_link  # 机器人基座坐标系
     transform_tolerance: 0.1  # 容差阈值
     simulate_ahead_time: 2.0  # 行为仿真前瞻时间（秒）
     max_rotational_vel: 1.0  # 最大值限制
