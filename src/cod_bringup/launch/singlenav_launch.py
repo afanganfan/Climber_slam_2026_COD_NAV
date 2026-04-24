@@ -66,8 +66,8 @@ def generate_launch_description():
                 parameters=[{
                     'input_topic': '/livox/lidar',
                     'output_topic': '/livox/lidar_filtered',
-                    'min_x': -0.2, 'max_x': 0.2,
-                    'min_y': -0.2, 'max_y': 0.4,
+                    'min_x': -0.3, 'max_x': 0.3,
+                    'min_y': -0.3, 'max_y': 0.3,
                     'min_z': -0.1, 'max_z': 0.2,
                     'negative': True,   # 挖掉车身
                     'leaf_size': 0.05   # 降采样
@@ -85,7 +85,8 @@ def generate_launch_description():
                                 "config",
                                 "mid360.yaml",
                             ]
-                        )
+                        ),
+                        {"base_frame": "chassis"},
                     ],
             ),
 
@@ -94,7 +95,7 @@ def generate_launch_description():
                 remappings=[('cloud_in',  '/livox/lidar'),
                             ('scan', '/scan')],
                 parameters=[{
-                    'target_frame': 'base_link',
+                    'target_frame': 'chassis',
                     'transform_tolerance': 0.5,
                     'min_height': 0.1,
                     'max_height': 1.00,
@@ -151,17 +152,6 @@ def generate_launch_description():
                     "base_link",
                     "--child-frame-id",
                     "livox_frame",
-                ],
-            ),
-            Node(
-                package="fake_vel_transform",
-                executable="fake_vel_transform_node",
-                output="screen",
-                parameters=[
-                    {"use_sim_time": use_sim_time},
-                    {"robot_base_frame": "base_link"},
-                    {"fake_robot_base_frame": "base_link_fake"},
-                    {"odom_topic": "Odometry"}
                 ],
             ),
             Node(

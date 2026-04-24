@@ -66,7 +66,7 @@ controller_server:  # 局部控制器服务配置
     controller_frequency: 50.0  # 运行频率（Hz）
     min_x_velocity_threshold: 0.001  # 最小值限制
     min_y_velocity_threshold: 0.001  # 最小值限制
-    min_theta_velocity_threshold: 0.001  # 最小值限制
+    min_theta_velocity_threshold: 0.03  # 抑制极小角速度抖动，避免目标点附近原地磨转
     failure_tolerance: 0.3  # 容差阈值
     progress_checker_plugin: "progress_checker"  # 进度检查器名称
     goal_checker_plugins: ["general_goal_checker"]  # "precise_goal_checker"；目标检查器插件列表
@@ -76,17 +76,19 @@ controller_server:  # 局部控制器服务配置
       required_movement_radius: 0.1  # 半径参数（米）
       movement_time_allowance: 999.0  # 允许无明显位移的最长时间（秒）
     general_goal_checker:  # 目标检查器配置
-      stateful: False  # 是否保留上次到达状态
+      stateful: True  # 进入到达判定后保持成功状态，减小噪声导致的反复退出
       plugin: "nav2_controller::PositionGoalChecker"  # 使用的插件类名
-      xy_goal_tolerance: 0.2  # 容差阈值
-      path_length_tolerance: 0.5  # 容差阈值
+      xy_goal_tolerance: 0.25  # 适度放宽到达半径，减少目标点附近来回修正
+      path_length_tolerance: 0.8  # 放宽末端路径长度容差，减少末端绕圈
     FollowPath:  # 路径跟踪控制器配置
       plugin: "goal_approach_controller::GoalApproachController"  # 使用的插件类名
       inner_plugin: "nav2_mppi_controller::MPPIController"  # 内部实际执行的控制器插件
-      approach_distance: 2.0  # 距目标2m开始限速，提前进入稳定接近阶段
-      approach_velocity: 0.15  # 接近目标时的限速（m/s），降低冲过目标风险
-      direct_approach_distance: 0.35  # 仅在非常接近目标时才直驱，避免过早脱离路径
-      direct_approach_kp: 1.2  # 近目标P增益，减小末端激进加速
+      approach_distance: 1.0  # 距目标1m再开始限速，减少远距离提前减速
+      approach_velocity: 0.20  # 接近目标限速适度提高，减速体感不突兀
+      direct_approach_distance: 0.22  # 更靠近目标才切直驱，优先保持沿路径接近
+      direct_approach_exit_distance: 0.36  # 直驱退出阈值（滞回），防止模式反复切换
+      direct_approach_kp: 1.05  # 近目标P增益小幅提高，避免末端“拖着走”
+      max_approach_angular_velocity: 0.25  # 近目标角速度上限，抑制绕圈
       time_steps: 80  # 增加到80，预测时域4.8s，让MPPI能看到冲过目标的后果
       model_dt: 0.02  # 稍微放大步长，配合time_steps延长预测时域
       batch_size: 1500  # 控制器的采样数。
@@ -162,7 +164,7 @@ controller_server:  # 局部控制器服务配置
         cost_power: 1  # 代价幂次
         cost_weight: 15.0  # 代价权重
         offset_from_furthest: 2  # 关注路径前方更远的点
-        threshold_to_consider: 0.6  # 让路径跟随持续到更靠近目标，减少末端偏离
+        threshold_to_consider: 0.4  # 路径约束保持到更近距离，减少目标点附近跑圆弧
 
       PathAlignCritic:  # 让轨迹方向与路径对齐，高速下更平滑
         enabled: true  # 是否启用
@@ -170,7 +172,7 @@ controller_server:  # 局部控制器服务配置
         cost_weight: 15.0  # 代价权重
         max_path_occupancy_ratio: 0.05  # 最大值限制
         trajectory_point_step: 4  # 轨迹评估采样步长
-        threshold_to_consider: 0.6  # 与PathFollow同步，尽量保持对路径方向的约束
+        threshold_to_consider: 0.4  # 与PathFollow同步，缩短末端无约束区域
         offset_from_furthest: 20  # 从最远路径点向前看的偏移量
         use_path_orientations: false  # omni机器人用运动方向而非朝向
 
@@ -180,7 +182,7 @@ local_costmap:  # 局部代价地图配置
       update_frequency: 20.0  # 运行频率（Hz）
       publish_frequency: 20.0  # 运行频率（Hz）
       global_frame: odom  # 全局坐标系名称
-      robot_base_frame: base_link_fake  # 机器人基座坐标系
+      robot_base_frame: chassis  # 机器人基座坐标系
       use_sim_time: False  # 是否使用仿真时间
       rolling_window: true  # 是否使用滚动窗口地图
       width: 10  # 地图宽度（米）
@@ -270,7 +272,7 @@ global_costmap:  # 全局代价地图配置
       update_frequency: 20.0  # 运行频率（Hz）
       publish_frequency: 20.0  # 运行频率（Hz）
       global_frame: map  # 全局坐标系名称
-      robot_base_frame: base_link_fake  # 机器人基座坐标系
+      robot_base_frame: chassis  # 机器人基座坐标系
       rolling_window: true  # 是否使用滚动窗口地图
       use_sim_time: False  # 是否使用仿真时间
       robot_radius: 0.1  # 半径参数（米）
@@ -407,7 +409,7 @@ smoother_server:  # 路径平滑服务配置
   ros__parameters:  # ROS 参数集合
     costmap_topic: global_costmap/costmap_raw  # 相关话题名
     footprint_topic: global_costmap/published_footprint  # 相关话题名
-    robot_base_frame: base_link_fake  # 机器人基座坐标系
+    robot_base_frame: chassis  # 机器人基座坐标系
     transform_tolerance: 0.1  # 容差阈值
     smoother_plugins: ["savitzky_golay_smoother"]  # 平滑器插件列表
     savitzky_golay_smoother:  # Savitzky-Golay 平滑器配置
@@ -439,7 +441,7 @@ behavior_server:  # 恢复与行为服务配置
         plugin: "nav2_behaviors/AssistedTeleop"  # 使用的插件类名
     local_frame: odom  # 局部坐标系名称
     global_frame: map  # 全局坐标系名称
-    robot_base_frame: base_link_fake  # 机器人基座坐标系
+    robot_base_frame: chassis  # 机器人基座坐标系
     transform_tolerance: 0.1  # 容差阈值
     simulate_ahead_time: 2.0  # 行为仿真前瞻时间（秒）
     max_rotational_vel: 1.0  # 最大值限制
