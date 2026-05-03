@@ -77,100 +77,36 @@ controller_server:
       xy_goal_tolerance: 0.30 #放宽到25cm，高速omni机器人10cm太严导致绕圈
       yaw_goal_tolerance: 6.28  # 到点yaw容差(rad)
     FollowPath:
-      plugin: "goal_approach_controller::GoalApproachController"  # 插件类型/类名
-      inner_plugin: "nav2_mppi_controller::MPPIController"  # 内层控制器插件
-      approach_distance: 0.5  # 更靠近目标再开始限速，减少提前收速
-      approach_velocity: 0.2  # 接近目标阶段限速(m/s)
-      direct_approach_distance: 0.22  # 更靠近目标才切直驱，优先保持沿路径接近
-      direct_approach_exit_distance: 0.36  # 直驱退出阈值（滞回），防止模式反复切换
-      direct_approach_kp: 1.05  # 近目标P增益小幅提高，避免末端“拖着走”
-      max_approach_angular_velocity: 0.25  # 近目标角速度上限，抑制绕圈
-      time_steps: 80  #增加到80，预测时域4.8s，让MPPI能看到冲过目标的后果
-      model_dt: 0.06  #稍微放大步长，配合time_steps延长预测时域
-      batch_size: 1500 #控制器的采样数。
-
-      vx_std: 0.35 #增大采样多样性，让MPPI能采到更多减速/停止轨迹
-      vy_std: 0.35  # y速度采样标准差
-      wz_std: 0.2  # 角速度采样标准差
-
-      vx_max: 2.5  # x最大速度
-      vy_max: 2.5  # y最大速度
-      wz_max: 1.5  # 最大角速度
-
-      vx_min: -2.5  # x最小速度
-      vy_min: -2.5  # y最小速度
-      wz_min: -1.5  # 最小角速度
-
-      ax_max: 1.5 #加速度提高，高速时能快速响应
-      ay_max: 1.5  # y最大加速度
-      az_max: 3.0  # 最大角加速度
-
-      ax_min: -3.5 #关键：制动力必须对称，高速下刹得住
-      ay_min: -3.5  # y最小加速度(制动)
-      az_min: -3.0  # 最小角加速度(制动)
-
-      iteration_count: 1  # 每周期优化迭代次数
-      prune_distance: 1.7 #高速下提前剪枝已通过的路径点
-      transform_tolerance: 0.1  # TF变换容忍时间(s)
-      temperature: 0.25 #大幅降低：让 MPPI 更果断选最优轨迹，不在次优之间摇摆
-      gamma: 0.015 #稍微提高正则化，减少激进抖动
-      motion_model: "Omni" #控制器的运动模型。
-      visualize: false #是否可视化。
-      reset_period: 0.08 # (only in Humble)
-      retry_attempt_limit: 2 #软重置的尝试次数
-      regenerate_noises: true  # 是否每次重生成噪声
-      TrajectoryVisualizer:
-        trajectory_step: 5 #是指在可视化轨迹时，每隔多少个轨迹点绘制一个点。
-        time_step: 3 #是指在可视化轨迹时，每隔多少个时间步长绘制一个点。
-      critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "PathFollowCritic", "PathAlignCritic", "ObstaclesCritic"]  # 代价评估器列表
-
-      ConstraintCritic:
-        enabled: true  # 是否启用该模块
-        cost_power: 1  # 代价幂指数
-        cost_weight: 4.0  # 代价权重
-
-      GoalCritic: #必须开启，否则机器人没有到达目标的动力
-        enabled: true  # 是否启用该模块
-        cost_power: 1  # 代价幂指数
-        cost_weight: 20.0 #配合二次惩罚适当调整权重
-        threshold_to_consider: 3.0  # 开始生效的距离阈值
-
-      ObstaclesCritic: #开启提供额外的障碍物排斥力
-        enabled: true  # 是否启用该模块
-        cost_power: 1  # 代价幂指数
-        repulsion_weight: 1.5 #排斥权重
-        critical_weight: 20.0 #近距离障碍物惩罚
-        consider_footprint: false #用圆形近似，omni机器人更高效
-        collision_cost: 10000.0  # 碰撞代价值
-        collision_margin_distance: 0.25 #碰撞边界余量
-        near_goal_distance: 0.1  # 近目标区域距离阈值(m)
-
-      CostCritic: #通过 costmap 梯度引导避障
-        enabled: true  # 是否启用该模块
-        cost_power: 1  # 代价幂指数
-        cost_weight: 3.8 #适当降低，配合修正后的 inflation 梯度
-        critical_cost: 253.0 #关键修正！只有 inscribed/lethal 才触发碰撞惩罚，不再把整个膨胀区都当碰撞
-        consider_footprint: true  # 是否使用足迹碰撞模型
-        collision_cost: 1000000.0  # 碰撞代价值
-        near_goal_distance: 0.5  # 近目标区域距离阈值(m)
-        trajectory_point_step: 2  # 轨迹采样步长
-
-      PathFollowCritic: #必须开启，这是防止乱跑的核心
-        enabled: true  # 是否启用该模块
-        cost_power: 1  # 代价幂指数
-        cost_weight: 8.0  # 代价权重
-        offset_from_furthest: 5 #关注路径前方更远的点
-        threshold_to_consider: 3.0 #缩小关闭距离，让路径跟随一直引导到接近目标，防止圆周运动
-
-      PathAlignCritic: #让轨迹方向与路径对齐，高速下更平滑
-        enabled: true  # 是否启用该模块
-        cost_power: 1  # 代价幂指数
-        cost_weight: 15.0  # 代价权重
-        max_path_occupancy_ratio: 0.05  # 路径占用率上限
-        trajectory_point_step: 4  # 轨迹采样步长
-        threshold_to_consider: 3.0 #与PathFollowCritic同步，在接近目标前持续提供方向引导
-        offset_from_furthest: 20  # 相对最远点的偏移量
-        use_path_orientations: false #omni机器人用运动方向而非朝向
+      plugin: "pb_omni_pid_pursuit_controller::OmniPidPursuitController"  # 插件类型/类名
+      translation_kp: 3.0  # 平移PID比例增益
+      translation_ki: 0.1  # 平移PID积分增益
+      translation_kd: 0.3  # 平移PID微分增益
+      enable_rotation: true  # 启用朝向控制
+      rotation_kp: 3.0  # 旋转PID比例增益
+      rotation_ki: 0.1  # 旋转PID积分增益
+      rotation_kd: 0.3  # 旋转PID微分增益
+      transform_tolerance: 0.1  # TF变换容忍时间
+      min_max_sum_error: 1.0  # PID积分限幅阈值
+      lookahead_dist: 0.5  # 固定前视距离
+      use_velocity_scaled_lookahead_dist: true  # 根据速度缩放前视距离
+      min_lookahead_dist: 0.3  # 最小前视距离
+      max_lookahead_dist: 1.2  # 最大前视距离
+      lookahead_time: 1.0  # 速度缩放前视时间
+      use_interpolation: true  # 对路径点插值
+      use_rotate_to_heading: false  # omni底盘默认不强制原地朝向路径
+      use_rotate_to_heading_treshold: 0.1  # 旋转到朝向阈值
+      min_approach_linear_velocity: 0.05  # 近目标最小线速度
+      approach_velocity_scaling_dist: 0.8  # 接近目标时的限速距离
+      v_linear_min: -2.5  # 最小线速度
+      v_linear_max: 2.5  # 最大线速度
+      v_angular_min: -1.5  # 最小角速度
+      v_angular_max: 1.5  # 最大角速度
+      curvature_min: 0.4  # 曲率限速开始阈值
+      curvature_max: 0.7  # 曲率限速结束阈值
+      reduction_ratio_at_high_curvature: 0.5  # 高曲率减速比例
+      curvature_forward_dist: 0.7  # 曲率前视距离
+      curvature_backward_dist: 0.3  # 曲率后视距离
+      max_velocity_scaling_factor_rate: 0.9  # 速度缩放变化率上限
 
 local_costmap:
   local_costmap:
@@ -192,7 +128,7 @@ local_costmap:
         map_subscribe_transient_local: True  # 是否使用瞬态本地订阅
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"  # 插件类型/类名
-        cost_scaling_factor: 5.0 #关键修正！原0.3衰减太慢，整个膨胀区代价都极高，MPPI没有梯度可用。5.0让代价快速衰减，形成清晰的"远离障碍物"梯度
+        cost_scaling_factor: 5.0 #让代价快速衰减，形成清晰的"远离障碍物"梯度
         inflation_radius: 0.75 #加大膨胀半径，高速下需要更早看到障碍物
       stvl_voxel_layer:
         plugin: "spatio_temporal_voxel_layer/SpatioTemporalVoxelLayer"  # 插件类型/类名
@@ -470,11 +406,11 @@ velocity_smoother:
     smoothing_frequency: 30.0  # 速度平滑频率(Hz)
     scale_velocities: False  # 是否按比例缩放速度
     feedback: "OPEN_LOOP"  # 速度反馈模式
-    max_velocity: [2.5, 2.5, 2.5] #与 MPPI 限速一致，不再截断高速输出
+    max_velocity: [2.5, 2.5, 2.5] #与控制器限速一致，不再截断高速输出
     min_velocity: [-2.5, -2.5, -2.5]  # 最小速度下限[x,y,w]
     deadband_velocity: [0.05, 0.05, 0.05]  # 速度死区[x,y,w]
     velocity_timeout: 1.0  # 速度指令超时时间(s)
-    max_accel: [2.5, 2.5, 3.0] #与 MPPI 加速度一致
-    max_decel: [-3.5, -3.5, -3.0] #与 MPPI 制动一致
+    max_accel: [2.5, 2.5, 3.0] #与控制器加速度一致
+    max_decel: [-3.5, -3.5, -3.0] #与控制器制动一致
     odom_topic: "Odometry"  # 里程计话题名
     odom_duration: 0.1  # 里程计缓存时长(s)
