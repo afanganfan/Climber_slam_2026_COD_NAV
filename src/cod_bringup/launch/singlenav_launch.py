@@ -132,12 +132,6 @@ def generate_launch_description():
                     "livox_frame",
                 ],
             ),
-            Node(
-                package="cod_serial_ul26",
-                executable="cod_serial",
-                output="screen",
-                parameters=[{"use_sim_time": use_sim_time}],
-            ),
             # *realsense_actions,
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(os.path.join(bring_up_dir,'launch','navigation_launch.py')),

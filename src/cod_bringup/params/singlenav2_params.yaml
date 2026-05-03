@@ -83,7 +83,7 @@ controller_server:  # 局部控制器服务配置
     FollowPath:  # 路径跟踪控制器配置
       plugin: "goal_approach_controller::GoalApproachController"  # 使用的插件类名
       inner_plugin: "nav2_mppi_controller::MPPIController"  # 内部实际执行的控制器插件
-      approach_distance: 1.0  # 距目标1m再开始限速，减少远距离提前减速
+      approach_distance: 0.5  # 更靠近目标再开始限速，减少提前收速
       approach_velocity: 0.20  # 接近目标限速适度提高，减速体感不突兀
       direct_approach_distance: 0.22  # 更靠近目标才切直驱，优先保持沿路径接近
       direct_approach_exit_distance: 0.36  # 直驱退出阈值（滞回），防止模式反复切换
@@ -358,7 +358,7 @@ map_server:  # 地图服务配置
     use_sim_time: False  # 是否使用仿真时间
     # Overridden in launch by the "map" launch configuration or provided default value.
     # To use in yaml, remove the default "map" value in the tb3_simulation_launch.py file & provide full path to map below.
-    yaml_filename: "/home/nucshao/Climber_slam_2026_COD_NAV/src/cod_bringup/maps/2025new1.yaml"  # 地图 YAML 文件路径
+    yaml_filename: "/home/nucshao/Climber_slam_2026_NAV/src/cod_bringup/maps/2025new1.yaml"  # 地图 YAML 文件路径
 
 map_saver:  # 地图保存服务配置
   ros__parameters:  # ROS 参数集合

@@ -79,8 +79,12 @@ controller_server:
     FollowPath:
       plugin: "goal_approach_controller::GoalApproachController"  # 插件类型/类名
       inner_plugin: "nav2_mppi_controller::MPPIController"  # 内层控制器插件
-      approach_distance: 2.5  #距目标时开始限速
+      approach_distance: 0.5  # 更靠近目标再开始限速，减少提前收速
       approach_velocity: 0.2  # 接近目标阶段限速(m/s)
+      direct_approach_distance: 0.22  # 更靠近目标才切直驱，优先保持沿路径接近
+      direct_approach_exit_distance: 0.36  # 直驱退出阈值（滞回），防止模式反复切换
+      direct_approach_kp: 1.05  # 近目标P增益小幅提高，避免末端“拖着走”
+      max_approach_angular_velocity: 0.25  # 近目标角速度上限，抑制绕圈
       time_steps: 80  #增加到80，预测时域4.8s，让MPPI能看到冲过目标的后果
       model_dt: 0.06  #稍微放大步长，配合time_steps延长预测时域
       batch_size: 1500 #控制器的采样数。
