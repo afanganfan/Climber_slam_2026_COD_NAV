@@ -23,8 +23,8 @@ def generate_launch_description():
 
     waypoint_to_nav2_node = Node(
         package='waypoint_editor',
-        executable='waypoint_to_nav2',
-        name='waypoint_to_nav2',
+        executable='waypoint_through_nav2',
+        name='waypoint_through_nav2',
         output='screen',
         parameters=[{
             'waypoint_file': waypoint_file,

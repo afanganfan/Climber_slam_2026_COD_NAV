@@ -60,7 +60,7 @@ PIDS+=("$!")
 # 给第一个 launch 少量启动时间，避免日志相互抢占
 sleep 1
 
-ros2 launch cod_bringup singlenav_launch.py &
+ros2 launch rm_bringup singlenav_launch.py &
 PIDS+=("$!")
 
 # 启动 COD 行为树前端 tactical_front

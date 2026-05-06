@@ -17,6 +17,8 @@ waypoint_editor和Nav2都会启动map_server，导致冲突。此外，waypoint_
 | `waypoint_to_nav2` | `follow_waypoints` | 逐点停靠 — 到达每个航点后停下再前往下一个 | 巡检、逐点任务 |
 | `waypoint_through_nav2` | `navigate_through_poses` | 平滑穿越 — 规划连续路径经过所有航点，不停留 | 巡逻、快速穿越 |
 
+如果你希望默认启动后就是“连续通过”模式，请直接使用 `waypoint_through_nav2.launch.py`。
+
 ## 使用步骤
 
 ### 1. 编译项目
@@ -52,11 +54,11 @@ source install/setup.bash
 机器人依次到达每个航点，在每个点停下后再前往下一个。
 
 ```bash
-ros2 launch waypoint_editor waypoint_to_nav2.launch.py waypoint_file:=/path/to/your/waypoints.csv
+ros2 launch waypoint_editor waypoint_through_nav2.launch.py waypoint_file:=/path/to/your/waypoints.csv
 ```
 
 ```bash
-ros2 service call /start_waypoint_following std_srvs/srv/Trigger
+ros2 service call /start_waypoint_through std_srvs/srv/Trigger
 ```
 
 #### 模式 B：平滑穿越（Navigate Through Poses）

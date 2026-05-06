@@ -8,8 +8,8 @@ bt_navigator:  # 行为树导航节点配置
     timeout: 100  # 超时时间
     wait_for_service_timeout: 1000  # 超时时间（秒）
     #default_nav_to_pose_bt_xml: $(find-pkg-share nav2_bt_navigator)/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml
-    default_nav_to_pose_bt_xml: $(find-pkg-share cod_bringup)/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml  # 单目标导航行为树文件路径
-    default_nav_through_poses_bt_xml: $(find-pkg-share cod_bringup)/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml  # 多航点导航行为树文件路径
+    default_nav_to_pose_bt_xml: $(find-pkg-share rm_bringup)/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml  # 单目标导航行为树文件路径
+    default_nav_through_poses_bt_xml: $(find-pkg-share rm_bringup)/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml  # 多航点导航行为树文件路径
 
     #default_nav_through_poses_bt_xml: $(find-pkg-share nav2_bt_navigator)/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml
     plugin_lib_names:  # 行为树插件库列表
@@ -294,7 +294,7 @@ map_server:  # 地图服务配置
     use_sim_time: False  # 是否使用仿真时间
     # Overridden in launch by the "map" launch configuration or provided default value.
     # To use in yaml, remove the default "map" value in the tb3_simulation_launch.py file & provide full path to map below.
-    yaml_filename: "/home/nucshao/Climber_slam_2026_NAV/src/cod_bringup/maps/2025new1.yaml"  # 地图 YAML 文件路径
+    yaml_filename: "/home/nucshao/Climber_slam_2026_NAV/src/rm_bringup/maps/2025new1.yaml"  # 地图 YAML 文件路径
 
 map_saver:  # 地图保存服务配置
   ros__parameters:  # ROS 参数集合

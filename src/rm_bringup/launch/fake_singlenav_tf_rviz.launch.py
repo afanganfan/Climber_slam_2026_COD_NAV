@@ -10,7 +10,7 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    bringup_dir = get_package_share_directory('cod_bringup')
+    bringup_dir = get_package_share_directory('rm_bringup')
     default_rviz_config = os.path.join(bringup_dir, 'rviz', 'cod_nav.rviz')
 
     use_rviz = LaunchConfiguration('use_rviz')

@@ -17,6 +17,8 @@ Two bridge nodes are provided. Both read waypoint_editor's CSV files, convert th
 | `waypoint_to_nav2` | `follow_waypoints` | Stop at each waypoint before moving to the next | Inspection, point-by-point tasks |
 | `waypoint_through_nav2` | `navigate_through_poses` | Plan a smooth path through all waypoints without stopping | Patrol, fast traversal |
 
+If you want the default launch path to run in smooth traversal mode, use `waypoint_through_nav2.launch.py`.
+
 ## Usage
 
 ### 1. Build
@@ -52,11 +54,11 @@ Choose one of the two modes:
 The robot visits each waypoint in order, stopping at each one before proceeding to the next.
 
 ```bash
-ros2 launch waypoint_editor waypoint_to_nav2.launch.py waypoint_file:=/path/to/your/waypoints.csv
+ros2 launch waypoint_editor waypoint_through_nav2.launch.py waypoint_file:=/path/to/your/waypoints.csv
 ```
 
 ```bash
-ros2 service call /start_waypoint_following std_srvs/srv/Trigger
+ros2 service call /start_waypoint_through std_srvs/srv/Trigger
 ```
 
 #### Mode B: Navigate Through Poses (smooth traversal)

@@ -19,8 +19,12 @@ public:
         this->declare_parameter<std::string>("waypoint_file", "");
         this->declare_parameter<std::string>("frame_id", "map");
 
-        start_service_ = this->create_service<std_srvs::srv::Trigger>(
+        start_through_service_ = this->create_service<std_srvs::srv::Trigger>(
             "start_waypoint_through",
+            std::bind(&WaypointThroughNav2::handleStart, this,
+                      std::placeholders::_1, std::placeholders::_2));
+        start_following_service_ = this->create_service<std_srvs::srv::Trigger>(
+            "start_waypoint_following",
             std::bind(&WaypointThroughNav2::handleStart, this,
                       std::placeholders::_1, std::placeholders::_2));
 
@@ -29,6 +33,7 @@ public:
 
         RCLCPP_INFO(this->get_logger(), "Waypoint through Nav2 bridge node started");
         RCLCPP_INFO(this->get_logger(), "Call service /start_waypoint_through to navigate through poses");
+        RCLCPP_INFO(this->get_logger(), "Compatibility service /start_waypoint_following is also available");
     }
 
 private:
@@ -173,7 +178,8 @@ private:
         }
     }
 
-    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_service_;
+    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_through_service_;
+    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_following_service_;
     rclcpp_action::Client<NavigateThroughPoses>::SharedPtr nav_through_client_;
 };
 

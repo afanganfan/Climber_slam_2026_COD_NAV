@@ -16,7 +16,7 @@
 ## 仓库结构
 ```bash
 .
-├── cod_bringup                     #Navigation2导航启动文件、机器人运动参数、地图存储、csv多点文件
+├── rm_bringup                     #Navigation2导航启动文件、机器人运动参数、地图存储、csv多点文件
 ├── cpp_lidar_filter                #剪裁去除机器人自身点云
 ├── fake_vel_transform              #TF转换
 ├── goal_approach_controller        #Nav2控制器wrapper：在接近目标时限制线速度，防止高速冲过目标点
@@ -54,16 +54,16 @@
 - 运行方式（启动导航前先启动雷达）
   - 多点导航
   ```shell
-  ros2 launch cod_bringup multiplenav_launch.py
+  ros2 launch rm_bringup multiplenav_launch.py
   ```
   - 单点导航
   ```shell
-  ros2 launch cod_bringup singlenav_launch.py
+  ros2 launch rm_bringup singlenav_launch.py
   ```
 ## 注意
   - 启动导航程序之前还应发布一个雷达坐标系到底盘坐标系的TF（可写在雷达驱动中）
   - 此导航程序的设计原理保持Keep It Simple Stupid的原则，发布坐标系静态转换比运用urdf维护更简单易操作
-  - cod_bringup中的auto_save_map.launch.py是运用在slam_toolbox上的自动保存地图程序，注意修改文件路径，可通过修改intervals中的参数修改保存地图的时间间隔
+  - rm_bringup中的auto_save_map.launch.py是运用在slam_toolbox上的自动保存地图程序，注意修改文件路径，可通过修改intervals中的参数修改保存地图的时间间隔
   - slam_toolbox建图参数可在mapper_params_online_async.yaml中调试修改
   - 使用slam_toolbox建出的地图仅有.pgm和.yaml生成，无需PCD
   - wps中csv文件的航点路径依次为“去增益点”“回启动区”“增益点后半区巡逻”“增益点内四角巡逻”“增益点前半区巡逻”“前压巡逻”
