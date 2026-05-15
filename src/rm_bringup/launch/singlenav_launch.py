@@ -134,7 +134,7 @@ def generate_launch_description():
             ),
             # *realsense_actions,
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(os.path.join(bring_up_dir,'launch','navigation_launch.py')),
+                PythonLaunchDescriptionSource(os.path.join(bring_up_dir,'launch','localization_launch.py')),
                 launch_arguments={
                                   'use_sim_time': "false",
                                   'autostart': "true",
@@ -144,7 +144,7 @@ def generate_launch_description():
                                   'container_name': 'nav2_container'}.items()
             ),
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(os.path.join(bring_up_dir,'launch','localization_launch.py')),
+                PythonLaunchDescriptionSource(os.path.join(bring_up_dir,'launch','navigation_launch.py')),
                 launch_arguments={
                                   'use_sim_time': "false",
                                   'autostart': "true",

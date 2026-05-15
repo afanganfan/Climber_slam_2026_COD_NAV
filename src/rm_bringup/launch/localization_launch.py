@@ -51,6 +51,9 @@ def generate_launch_description():
     #              https://github.com/ros2/launch_ros/issues/56
     remappings = [('/tf', 'tf'),
                   ('/tf_static', 'tf_static')]
+    amcl_remappings = remappings + [
+        ('/reinitialize_global_localization', 'disabled_reinitialize_global_localization')
+    ]
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
@@ -60,7 +63,6 @@ def generate_launch_description():
     configured_params = ParameterFile(
         RewrittenYaml(
             source_file=params_file,
-            root_key=namespace,
             param_rewrites=param_substitutions,
             convert_types=True),
         allow_substs=True)
@@ -130,7 +132,7 @@ def generate_launch_description():
                 respawn_delay=2.0,
                 parameters=[configured_params],
                 arguments=['--ros-args', '--log-level', log_level],
-                remappings=remappings),
+                remappings=amcl_remappings),
             Node(
                 package='nav2_lifecycle_manager',
                 executable='lifecycle_manager',
@@ -158,7 +160,7 @@ def generate_launch_description():
                 plugin='nav2_amcl::AmclNode',
                 name='amcl',
                 parameters=[configured_params],
-                remappings=remappings),
+                remappings=amcl_remappings),
             ComposableNode(
                 package='nav2_lifecycle_manager',
                 plugin='nav2_lifecycle_manager::LifecycleManager',

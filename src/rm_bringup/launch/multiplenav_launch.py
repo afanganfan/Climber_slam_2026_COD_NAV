@@ -1,11 +1,10 @@
 import os
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, GroupAction
-from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
-from ament_index_python.packages import PackageNotFoundError, get_package_share_directory
+from ament_index_python.packages import get_package_share_directory
 from launch_ros.substitutions import FindPackageShare
 
 
@@ -177,15 +176,6 @@ def generate_launch_description():
                     "base_link",
                     "--child-frame-id",
                     "livox_frame",
-                ],
-            ),
-            Node(
-                package="cod_serial_ul26",
-                executable="cod_serial",
-                output="screen",
-                parameters=[
-                    {"use_sim_time": use_sim_time},
-                    {"topic_name": "cmd_vel"}
                 ],
             ),
             # *realsense_actions,
